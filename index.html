@@ -714,6 +714,18 @@
                 transform: translateY(-20px) rotate(10deg);
             }
         }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 
@@ -823,6 +835,69 @@
             </div>
         </section>
 
+        <!-- Interactive Demo Section -->
+        <section class="demo-section"
+            style="background: var(--white); border: var(--border-width) solid var(--text-main); border-radius: 16px; padding: 2rem; margin-bottom: 6rem; box-shadow: var(--shadow-lg);">
+            <div class="section-header" style="margin-bottom: 2rem;">
+                <div class="section-tag">Try It Out</div>
+                <h2>Talk to Nano-Mind</h2>
+                <div id="statusText" style="margin-top: 10px; font-weight: bold; color: var(--text-muted);">Checking
+                    server...</div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <textarea id="promptInput"
+                    placeholder="Type your prompt here... e.g. Explain how a CPU-based transformer inference engine works."
+                    style="width: 100%; height: 120px; border: var(--border-width) solid var(--text-main); border-radius: 12px; padding: 1rem; font-family: inherit; font-size: 1.1rem; resize: vertical; box-shadow: var(--shadow-sm); outline: none;"></textarea>
+
+                <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Max Tokens: <span
+                                id="maxTokensVal" style="color: var(--green);">100</span></label>
+                        <input type="range" id="maxTokens" min="1" max="500" value="100"
+                            style="width: 100%; cursor: pointer;"
+                            oninput="document.getElementById('maxTokensVal').textContent = this.value">
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Temperature: <span
+                                id="tempVal" style="color: var(--green);">0.8</span></label>
+                        <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.8"
+                            style="width: 100%; cursor: pointer;"
+                            oninput="document.getElementById('tempVal').textContent = this.value">
+                    </div>
+                </div>
+
+                <button id="generateBtn" class="btn-primary"
+                    style="justify-content: center; font-size: 1.3rem; padding: 1rem; cursor: pointer; border: var(--border-width) solid var(--text-main); box-shadow: var(--shadow-sm); transition: transform 0.1s;">Generate
+                    Text</button>
+
+                <div id="outputSection"
+                    style="display: none; background: var(--bg-color); border: var(--border-width) solid var(--text-main); border-radius: 12px; padding: 1.5rem; margin-top: 1rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);">
+                    <div
+                        style="font-size: 1.1rem; white-space: pre-wrap; line-height: 1.6; min-height: 80px; font-family: monospace;">
+                        <span id="promptEcho" style="opacity: 0.6; font-style: italic;"></span><br><br><span
+                            id="outputText"></span><span id="cursor"
+                            style="display: inline-block; width: 8px; height: 1.2em; background-color: var(--text-main); vertical-align: middle; animation: blink 1s step-end infinite; margin-left: 2px;"></span>
+                    </div>
+
+                    <div
+                        style="display: flex; gap: 1rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 2px dashed var(--text-main); flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 100px;"><strong>Tokens In:</strong> <span
+                                id="metricTokensIn">-</span></div>
+                        <div style="flex: 1; min-width: 100px;"><strong>Tokens Out:</strong> <span
+                                id="metricTokensOut">-</span></div>
+                        <div style="flex: 1; min-width: 100px;"><strong>Latency:</strong> <span
+                                id="metricLatency">-</span></div>
+                        <div style="flex: 1; min-width: 100px;"><strong>Speed:</strong> <span id="metricSpeed">-</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="errorMessage"
+                    style="display: none; color: #b91c1c; font-weight: bold; border: var(--border-width) solid #b91c1c; padding: 1rem; border-radius: 12px; background: #fee2e2;">
+                </div>
+            </div>
+        </section>
+
         <!-- Stats Section Moved Here! -->
         <section class="stats-section">
             <div class="stat-item">
@@ -832,7 +907,7 @@
                     </svg>
                 </div>
                 <div class="stat-text">
-                    <h2>33</h2>
+                    <h2>82.3</h2>
                     <h4>Tokens Per Second</h4>
                     <p>Ultra-fast token generation</p>
                 </div>
@@ -846,7 +921,7 @@
                     </svg>
                 </div>
                 <div class="stat-text">
-                    <h2>410ms</h2>
+                    <h2>1940ms</h2>
                     <h4>Response Time (Warm)</h4>
                     <p>Lightning quick replies</p>
                 </div>
@@ -1186,6 +1261,108 @@
                     }, 300);
                 }, 2000);
             });
+        })();
+
+        // Inference Engine API Integration
+        (function () {
+            const API_URL = 'https://not-omega-nanomind.hf.space';
+            const statusText = document.getElementById('statusText');
+            const promptInput = document.getElementById('promptInput');
+            const generateBtn = document.getElementById('generateBtn');
+            const outputSection = document.getElementById('outputSection');
+            const promptEcho = document.getElementById('promptEcho');
+            const outputText = document.getElementById('outputText');
+            const cursor = document.getElementById('cursor');
+            const errorMessage = document.getElementById('errorMessage');
+
+            async function checkServerHealth() {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 2000);
+                    const response = await fetch(`${API_URL}/health`, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+
+                    if (response.ok) {
+                        statusText.textContent = 'Server Online 🟢 (Hugging Face)';
+                        statusText.style.color = 'var(--green)';
+                    } else {
+                        throw new Error('Error');
+                    }
+                } catch (error) {
+                    statusText.textContent = 'Server Offline 🔴 (Hugging Face space may be sleeping)';
+                    statusText.style.color = '#b91c1c';
+                }
+            }
+
+            if (statusText) {
+                checkServerHealth();
+                setInterval(checkServerHealth, 10000);
+            }
+
+            async function typeWriter(text, element) {
+                element.textContent = '';
+                cursor.style.display = 'inline-block';
+                const chunks = text.match(/.{1,4}/g) || [];
+                for (let i = 0; i < chunks.length; i++) {
+                    element.textContent += chunks[i];
+                    await new Promise(r => setTimeout(r, Math.random() * 30 + 10));
+                }
+                cursor.style.animation = 'blink 1s step-end infinite';
+            }
+
+            if (generateBtn) {
+                generateBtn.addEventListener('click', async () => {
+                    const prompt = promptInput.value.trim();
+                    if (!prompt) return;
+
+                    generateBtn.disabled = true;
+                    generateBtn.textContent = 'Generating...';
+                    generateBtn.style.opacity = '0.7';
+                    errorMessage.style.display = 'none';
+                    outputSection.style.display = 'block';
+
+                    promptEcho.textContent = prompt;
+                    outputText.textContent = '';
+                    cursor.style.display = 'inline-block';
+                    cursor.style.animation = 'none';
+
+                    document.getElementById('metricTokensIn').textContent = '-';
+                    document.getElementById('metricTokensOut').textContent = '-';
+                    document.getElementById('metricLatency').textContent = '-';
+                    document.getElementById('metricSpeed').textContent = '-';
+
+                    try {
+                        const response = await fetch(`${API_URL}/generate`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                prompt: prompt,
+                                max_tokens: parseInt(document.getElementById('maxTokens').value),
+                                temperature: parseFloat(document.getElementById('temperature').value),
+                                top_k: 40
+                            })
+                        });
+
+                        if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+
+                        const data = await response.json();
+                        await typeWriter(data.generated_text, outputText);
+
+                        document.getElementById('metricTokensIn').textContent = data.tokens_in;
+                        document.getElementById('metricTokensOut').textContent = data.tokens_out;
+                        document.getElementById('metricLatency').textContent = `${data.latency_ms.toFixed(1)}ms`;
+                        document.getElementById('metricSpeed').textContent = `${data.tokens_per_sec.toFixed(1)} t/s`;
+                    } catch (error) {
+                        errorMessage.textContent = `Error: ${error.message}. The Hugging Face space might be waking up.`;
+                        errorMessage.style.display = 'block';
+                        cursor.style.display = 'none';
+                    } finally {
+                        generateBtn.disabled = false;
+                        generateBtn.textContent = 'Generate Text';
+                        generateBtn.style.opacity = '1';
+                    }
+                });
+            }
         })();
     </script>
 </body>
