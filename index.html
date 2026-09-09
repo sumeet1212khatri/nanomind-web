@@ -4,23 +4,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nano-Mind | The End-to-End LLM System</title>
+    <title>Nano-Mind | AI Story Generator — C++ Inference Engine</title>
+    <meta name="description"
+        content="Nano-Mind is a lightweight GPT-2-style story generation model powered by a custom C++17 inference engine with AVX2/FMA optimization. Generate stories directly in your browser.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:ital@0;1&display=swap" rel="stylesheet">
     <style>
-        /* Modern Layout with Comic Style Variables */
+        /* ============================================
+           DESIGN SYSTEM
+           ============================================ */
         :root {
             --bg-color: #FFFDD0;
-            /* Cream */
+            --bg-subtle: #faf8e8;
             --text-main: #111;
-            --text-muted: #444;
-            --green: #90EE90;
-            /* Classic Comic Green */
+            --text-muted: #555;
+            --text-light: #777;
+            --green: #4ade80;
+            --green-dark: #16a34a;
             --green-light: #d1fae5;
+            --green-bg: #f0fdf4;
             --white: #ffffff;
+            --red: #dc2626;
+            --red-light: #fee2e2;
             --border-radius: 16px;
-            --shadow-sm: 4px 4px 0 #111;
-            --shadow-md: 8px 8px 0 #111;
-            --shadow-lg: 12px 12px 0 #111;
-            --border-width: 4px;
+            --shadow-sm: 3px 3px 0 #111;
+            --shadow-md: 6px 6px 0 #111;
+            --shadow-lg: 10px 10px 0 #111;
+            --border: 3px solid var(--text-main);
+            --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-serif: 'Lora', Georgia, serif;
+            --transition: 0.2s ease;
         }
 
         * {
@@ -29,59 +43,72 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
-            font-family: "Comic Sans MS", "Comic Sans", cursive, sans-serif;
+            font-family: var(--font-sans);
             background-color: var(--bg-color);
             color: var(--text-main);
-            line-height: 1.5;
+            line-height: 1.6;
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
         .container {
-            max-width: 1600px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 0 4rem;
+            padding: 0 2rem;
         }
 
-        /* Nav */
+        /* ============================================
+           HEADER
+           ============================================ */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1.5rem 0;
-            border-bottom: 1px solid #eaeaea;
-            margin-bottom: 3rem;
+            padding: 1.25rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            margin-bottom: 4rem;
         }
 
         .logo {
             font-weight: 800;
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             display: flex;
             align-items: center;
             gap: 8px;
             color: var(--text-main);
             text-decoration: none;
+            letter-spacing: -0.5px;
         }
 
-        .logo-icon {
-            font-size: 1.5rem;
+        .logo-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--green);
+            border-radius: 50%;
+            display: inline-block;
         }
 
         .logo span {
-            color: var(--green);
+            color: var(--green-dark);
         }
 
         nav {
             display: flex;
-            gap: 2rem;
+            gap: 1.75rem;
+            align-items: center;
         }
 
         nav a {
             text-decoration: none;
             color: var(--text-muted);
             font-weight: 500;
-            font-size: 0.95rem;
-            transition: color 0.2s;
+            font-size: 0.9rem;
+            transition: color var(--transition);
         }
 
         nav a:hover {
@@ -95,134 +122,179 @@
             border-radius: 8px;
             text-decoration: none;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
-            gap: 8px;
-            transition: background 0.2s;
-            border: var(--border-width) solid var(--text-main);
+            gap: 6px;
+            transition: background var(--transition);
+            border: var(--border);
         }
 
         .github-btn:hover {
             background: #333;
         }
 
-        /* Hero */
+        /* Mobile nav toggle */
+        .nav-toggle {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .nav-toggle span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--text-main);
+            margin: 5px 0;
+            transition: var(--transition);
+        }
+
+        /* ============================================
+           HERO
+           ============================================ */
         .hero {
             display: flex;
             align-items: center;
             gap: 4rem;
-            margin-bottom: 4rem;
+            margin-bottom: 5rem;
         }
 
         .hero-content {
-            flex: 1;
+            flex: 1.2;
         }
 
         .hero-tag {
             display: inline-block;
             background: var(--green-light);
-            color: #047857;
-            padding: 0.25rem 0.75rem;
+            color: var(--green-dark);
+            padding: 0.3rem 0.9rem;
             border-radius: 20px;
-            font-size: 1rem;
-            font-weight: 600;
+            font-size: 0.75rem;
+            font-weight: 700;
             margin-bottom: 1.5rem;
-            border: var(--border-width) solid var(--text-main);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            border: 2px solid var(--green-dark);
         }
 
         .hero h1 {
-            font-size: 4rem;
+            font-size: 3.5rem;
             line-height: 1.1;
             font-weight: 800;
-            margin-bottom: 1.5rem;
-            letter-spacing: -1px;
+            margin-bottom: 1.25rem;
+            letter-spacing: -1.5px;
         }
 
-        .hero h1 span {
-            color: var(--green);
+        .hero h1 .accent {
+            color: var(--green-dark);
         }
 
-        .hero p {
-            font-size: 1.3rem;
+        .hero-sub {
+            font-size: 1.1rem;
             color: var(--text-muted);
             margin-bottom: 2rem;
-            max-width: 90%;
+            max-width: 520px;
+            line-height: 1.7;
         }
 
         .hero-actions {
             display: flex;
-            gap: 1rem;
-            margin-bottom: 3rem;
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
+            flex-wrap: wrap;
         }
 
         .btn-primary {
             background: var(--text-main);
             color: var(--white);
             padding: 0.75rem 1.5rem;
-            border-radius: 8px;
+            border-radius: 10px;
             text-decoration: none;
             font-weight: 600;
-            font-size: 1.2rem;
-            display: flex;
+            font-size: 1rem;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
-            transition: background 0.2s;
-            border: var(--border-width) solid var(--text-main);
+            transition: all var(--transition);
+            border: var(--border);
+            cursor: pointer;
+            font-family: var(--font-sans);
+            box-shadow: var(--shadow-sm);
         }
 
         .btn-primary:hover {
-            background: #333;
+            background: #222;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:active {
+            transform: translateY(1px);
+            box-shadow: 1px 1px 0 #111;
         }
 
         .btn-secondary {
             background: var(--white);
             color: var(--text-main);
             padding: 0.75rem 1.5rem;
-            border-radius: 8px;
+            border-radius: 10px;
             text-decoration: none;
             font-weight: 600;
-            font-size: 1.2rem;
-            display: flex;
+            font-size: 1rem;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
-            border: var(--border-width) solid var(--text-main);
-            transition: border-color 0.2s;
+            border: var(--border);
+            transition: all var(--transition);
+            box-shadow: var(--shadow-sm);
         }
 
         .btn-secondary:hover {
-            border-color: #ccc;
+            background: #f9f9f9;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
         }
 
         .hero-features {
             display: flex;
             gap: 2rem;
+            flex-wrap: wrap;
         }
 
         .feature-item {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .feature-icon {
-            color: var(--green);
-            font-size: 1.25rem;
+            width: 36px;
+            height: 36px;
+            background: var(--green-light);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
         }
 
         .feature-text h4 {
-            font-size: 1.1rem;
-            margin-bottom: 2px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 0;
         }
 
         .feature-text p {
-            font-size: 1rem;
-            color: var(--text-muted);
+            font-size: 0.8rem;
+            color: var(--text-light);
             margin: 0;
         }
 
         .hero-image {
-            flex: 1;
+            flex: 0.8;
             display: flex;
             justify-content: flex-end;
         }
@@ -230,26 +302,26 @@
         .hero-card {
             background: #0a0a0a;
             border-radius: 20px;
-            padding: 3rem;
+            padding: 2.5rem;
             text-align: center;
             box-shadow: var(--shadow-lg);
             width: 100%;
-            max-width: 500px;
-            border: var(--border-width) solid var(--text-main);
+            max-width: 420px;
+            border: var(--border);
         }
 
         .hero-card img {
             width: 100%;
-            max-width: 300px;
-            margin-bottom: 2rem;
+            max-width: 260px;
+            margin-bottom: 1.5rem;
             border-radius: 8px;
         }
 
         .hero-card h3 {
             color: var(--white);
-            font-size: 2.2rem;
+            font-size: 1.8rem;
             letter-spacing: 2px;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
             font-weight: 300;
         }
 
@@ -260,99 +332,407 @@
 
         .hero-card p {
             color: #888;
-            font-size: 1rem;
-            letter-spacing: 4px;
+            font-size: 0.85rem;
+            letter-spacing: 3px;
             text-transform: uppercase;
             margin: 0;
         }
 
-        /* Stats */
-        .stats-section {
+        /* ============================================
+           STORY GENERATOR
+           ============================================ */
+        .generator-section {
             background: var(--white);
-            border-radius: 16px;
-            padding: 2rem;
-            display: flex;
-            justify-content: space-between;
-            box-shadow: var(--shadow-md);
-            margin-bottom: 6rem;
-            border: var(--border-width) solid var(--text-main);
+            border: var(--border);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            margin-bottom: 5rem;
+            box-shadow: var(--shadow-lg);
         }
 
-        .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-            flex: 1;
-        }
-
-        .stat-item:not(:last-child) {
-            border-right: 1px solid #eee;
-            margin-right: 2rem;
-        }
-
-        .stat-icon {
-            width: 60px;
-            height: 60px;
-            background: var(--bg-color);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--green);
-            font-size: 1.5rem;
-            border: var(--border-width) solid var(--text-main);
-        }
-
-        .stat-text h2 {
-            font-size: 2.5rem;
-            color: var(--green);
-            line-height: 1;
-            margin-bottom: 0.25rem;
-        }
-
-        .stat-text h4 {
-            font-size: 1.1rem;
-            margin-bottom: 2px;
-        }
-
-        .stat-text p {
-            font-size: 1rem;
-            color: var(--text-muted);
-            margin: 0;
-        }
-
-        /* Section Headers */
-        .section-header {
+        .generator-header {
             text-align: center;
-            margin-bottom: 4rem;
+            margin-bottom: 2rem;
         }
 
-        .section-tag {
-            color: var(--green);
+        .generator-header .section-tag {
+            margin-bottom: 0.5rem;
+        }
+
+        .generator-header h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            background: var(--bg-color);
+            margin-top: 0.5rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ccc;
+            transition: background var(--transition);
+        }
+
+        .status-dot.online {
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+        }
+
+        .status-dot.offline {
+            background: var(--red);
+        }
+
+        .prompt-label {
+            display: block;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .prompt-textarea {
+            width: 100%;
+            height: 120px;
+            border: var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            font-family: var(--font-sans);
             font-size: 1rem;
+            resize: vertical;
+            box-shadow: var(--shadow-sm);
+            outline: none;
+            transition: box-shadow var(--transition);
+            background: var(--white);
+            color: var(--text-main);
+        }
+
+        .prompt-textarea:focus {
+            box-shadow: var(--shadow-md);
+            border-color: var(--green-dark);
+        }
+
+        .prompt-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .prompt-chip {
+            background: var(--bg-color);
+            border: 2px solid var(--text-main);
+            border-radius: 20px;
+            padding: 0.35rem 0.9rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: var(--font-sans);
+            color: var(--text-main);
+        }
+
+        .prompt-chip:hover {
+            background: var(--green-light);
+            border-color: var(--green-dark);
+            transform: translateY(-1px);
+        }
+
+        .prompt-chip:active {
+            transform: translateY(0);
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 0.4rem;
+            color: var(--text-main);
+        }
+
+        .control-group .control-value {
+            color: var(--green-dark);
+            font-weight: 700;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--green-dark);
+            height: 6px;
+        }
+
+        .generate-btn {
+            width: 100%;
+            justify-content: center;
+            font-size: 1.15rem;
+            padding: 1rem;
+            border: var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: var(--shadow-sm) !important;
+        }
+
+        /* ============================================
+           STORY OUTPUT
+           ============================================ */
+        .story-output {
+            display: none;
+            margin-top: 1.5rem;
+            animation: fadeInUp 0.4s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .story-card {
+            background: var(--bg-color);
+            border: var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .story-card-header {
+            background: var(--text-main);
+            color: var(--white);
+            padding: 0.6rem 1.25rem;
+            font-size: 0.7rem;
             font-weight: 700;
             letter-spacing: 2px;
             text-transform: uppercase;
-            margin-bottom: 1rem;
+        }
+
+        .story-card-body {
+            padding: 1.5rem;
+            min-height: 100px;
+        }
+
+        .story-text {
+            font-family: var(--font-serif);
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: var(--text-main);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .story-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.2em;
+            background-color: var(--green-dark);
+            vertical-align: middle;
+            animation: cursorBlink 1s step-end infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes cursorBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .story-metrics {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-top: 2px dashed rgba(0, 0, 0, 0.15);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            flex-wrap: wrap;
+        }
+
+        .story-metrics .metric-sep {
+            color: #ccc;
+        }
+
+        .story-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .story-action-btn {
+            background: var(--white);
+            border: 2px solid var(--text-main);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font-sans);
+            transition: all var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-main);
+        }
+
+        .story-action-btn:hover {
+            background: var(--bg-color);
+            transform: translateY(-1px);
+            box-shadow: 2px 2px 0 var(--text-main);
+        }
+
+        .copy-toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text-main);
+            color: var(--white);
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+            pointer-events: none;
+        }
+
+        .copy-toast.visible {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .error-message {
+            display: none;
+            color: var(--red);
+            font-weight: 600;
+            border: 3px solid var(--red);
+            padding: 1rem;
+            border-radius: 12px;
+            background: var(--red-light);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* ============================================
+           SECTION UTILITIES
+           ============================================ */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-tag {
+            color: var(--green-dark);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
         }
 
         .section-header h2 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            font-weight: 700;
+            font-size: 2.25rem;
+            margin-bottom: 0.75rem;
+            font-weight: 800;
+            letter-spacing: -1px;
         }
 
         .section-header p {
             color: var(--text-muted);
-            font-size: 1.3rem;
+            font-size: 1.05rem;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
-        /* How it works */
-        .steps-container {
+        /* ============================================
+           STATS
+           ============================================ */
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 5rem;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border: var(--border);
+            border-radius: 14px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-card .stat-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--green-light);
+            border-radius: 12px;
             display: flex;
-            justify-content: space-between;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.75rem;
+            font-size: 1.25rem;
+        }
+
+        .stat-card h3 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 0.2rem;
+            letter-spacing: -0.5px;
+        }
+
+        .stat-card p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* ============================================
+           HOW IT WORKS
+           ============================================ */
+        .steps-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
             position: relative;
-            margin-bottom: 6rem;
+            margin-bottom: 5rem;
         }
 
         .step {
@@ -360,152 +740,256 @@
             flex-direction: column;
             align-items: center;
             text-align: center;
-            flex: 1;
-            z-index: 1;
+            position: relative;
         }
 
         .step-number {
             width: 28px;
             height: 28px;
             background: var(--green);
-            color: white;
+            color: var(--text-main);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
+            font-size: 0.8rem;
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            border: 2px solid var(--text-main);
         }
 
-        .step-icon {
-            width: 80px;
-            height: 80px;
+        .step-icon-box {
+            width: 72px;
+            height: 72px;
             background: var(--white);
-            border-radius: 50%;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: var(--shadow-md);
-            margin-bottom: 1.5rem;
-            font-size: 1.75rem;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
             color: var(--text-main);
-            border: var(--border-width) solid var(--text-main);
+            border: var(--border);
+            transition: all var(--transition);
+        }
+
+        .step:hover .step-icon-box {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
         }
 
         .step h4 {
-            margin-bottom: 0.5rem;
-            font-size: 1.2rem;
+            margin-bottom: 0.3rem;
+            font-size: 0.95rem;
+            font-weight: 700;
         }
 
         .step p {
             color: var(--text-muted);
-            font-size: 1.1rem;
-            max-width: 200px;
+            font-size: 0.8rem;
+            max-width: 180px;
+            line-height: 1.4;
         }
 
-        .step-connector {
+        .step-arrow {
             position: absolute;
-            top: 75px;
-            left: 15%;
-            right: 15%;
-            border-top: 2px dashed #d1fae5;
-            z-index: 0;
+            right: -12px;
+            top: 70px;
+            color: var(--green);
+            font-size: 1.25rem;
+            font-weight: 700;
         }
 
-        /* Tech Stack */
+        /* ============================================
+           TECH STACK
+           ============================================ */
         .tech-stack {
             background: var(--white);
-            border-radius: 16px;
-            padding: 3rem;
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
             box-shadow: var(--shadow-sm);
-            margin-bottom: 6rem;
-            border: var(--border-width) solid var(--text-main);
+            margin-bottom: 5rem;
+            border: var(--border);
         }
 
         .tech-grid {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 1.5rem;
+            gap: 1rem;
         }
 
         .tech-badge {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 0.75rem 1.5rem;
+            gap: 8px;
+            padding: 0.6rem 1.25rem;
             background: var(--white);
-            border: var(--border-width) solid var(--text-main);
+            border: var(--border);
             border-radius: 50px;
-            font-weight: 500;
-            font-size: 1.1rem;
+            font-weight: 600;
+            font-size: 0.9rem;
             box-shadow: var(--shadow-sm);
-            transition: all 0.2s;
+            transition: all var(--transition);
         }
 
         .tech-badge:hover {
             transform: translateY(-2px);
             box-shadow: var(--shadow-md);
-            border-color: #d1fae5;
+            border-color: var(--green-dark);
         }
 
         .tech-icon {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
         }
 
-        /* Architecture */
-        .architecture-container {
-            margin-bottom: 6rem;
+        /* ============================================
+           ARCHITECTURE
+           ============================================ */
+        .architecture-section {
+            margin-bottom: 5rem;
         }
 
-        .carousel-track {
-            border-radius: 16px;
-            overflow: hidden;
+        .arch-pipeline {
+            max-width: 700px;
+            margin: 0 auto;
+            background: #0a0a0a;
+            border: var(--border);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
             box-shadow: var(--shadow-lg);
-            position: relative;
-            background: var(--white);
-            border: var(--border-width) solid var(--text-main);
-            perspective: 1000px;
+            color: var(--white);
         }
 
-        .carousel-arrow {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
+        .arch-node {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 0.75rem 0;
+        }
+
+        .arch-node-icon {
             width: 40px;
             height: 40px;
-            background: var(--white);
-            border-radius: 50%;
+            min-width: 40px;
+            background: rgba(74, 222, 128, 0.15);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: var(--shadow-md);
-            border: 1px solid #eaeaea;
-            cursor: pointer;
-            z-index: 10;
-            transition: all 0.2s;
+            font-size: 1rem;
         }
 
-        .carousel-arrow:hover {
-            background: #f9f9f9;
-            transform: translateY(-50%) scale(1.05);
+        .arch-node-content h4 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--green);
+            margin-bottom: 0.15rem;
         }
 
-        .carousel-arrow.left {
-            left: -20px;
+        .arch-node-content p {
+            font-size: 0.8rem;
+            color: #aaa;
+            line-height: 1.4;
         }
 
-        .carousel-arrow.right {
-            right: -20px;
+        .arch-arrow {
+            text-align: center;
+            color: #555;
+            font-size: 0.9rem;
+            padding: 0.15rem 0;
+            padding-left: 16px;
         }
 
-        /* Video Section */
+        .arch-sub-nodes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            margin-left: 56px;
+        }
+
+        .arch-sub-node {
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid rgba(74, 222, 128, 0.25);
+            border-radius: 6px;
+            padding: 0.3rem 0.7rem;
+            font-size: 0.7rem;
+            color: var(--green);
+            font-weight: 500;
+        }
+
+        /* ============================================
+           PERFORMANCE
+           ============================================ */
+        .perf-section {
+            margin-bottom: 5rem;
+        }
+
+        .perf-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            max-width: 700px;
+            margin: 0 auto 1.5rem;
+        }
+
+        .perf-card {
+            background: var(--white);
+            border: var(--border);
+            border-radius: 14px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .perf-card .perf-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--green-dark);
+            margin-bottom: 0.2rem;
+            letter-spacing: -1px;
+        }
+
+        .perf-card .perf-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 0.1rem;
+        }
+
+        .perf-card .perf-desc {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .perf-note {
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            line-height: 1.5;
+            background: var(--bg-subtle);
+            padding: 1rem;
+            border-radius: 10px;
+            border: 2px solid rgba(0,0,0,0.06);
+        }
+
+        .perf-note strong {
+            color: var(--text-muted);
+        }
+
+        /* ============================================
+           VIDEO
+           ============================================ */
         .video-section {
             display: flex;
             align-items: center;
-            gap: 4rem;
-            margin-bottom: 6rem;
+            gap: 3rem;
+            margin-bottom: 5rem;
         }
 
         .video-text {
@@ -513,29 +997,32 @@
         }
 
         .video-text h2 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
             line-height: 1.2;
+            font-weight: 800;
+            letter-spacing: -1px;
         }
 
         .video-text p {
             color: var(--text-muted);
-            font-size: 1.1rem;
-            margin-bottom: 2rem;
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
         }
 
         .video-player {
-            flex: 1.5;
+            flex: 1.3;
         }
 
         .video-wrapper {
             position: relative;
             padding-bottom: 56.25%;
-            border-radius: 16px;
+            border-radius: var(--border-radius);
             overflow: hidden;
             box-shadow: var(--shadow-lg);
             background: #000;
-            border: var(--border-width) solid var(--text-main);
+            border: var(--border);
         }
 
         .video-wrapper iframe,
@@ -553,273 +1040,379 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 80px;
-            height: 80px;
+            width: 72px;
+            height: 72px;
             background: rgba(22, 163, 74, 0.9);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            transition: transform 0.2s;
+            transition: transform var(--transition);
         }
 
         #video-thumb:hover .play-btn-overlay {
-            transform: translate(-50%, -50%) scale(1.05);
+            transform: translate(-50%, -50%) scale(1.08);
         }
 
         .play-btn-overlay div {
             width: 0;
             height: 0;
-            border-top: 15px solid transparent;
-            border-bottom: 15px solid transparent;
-            border-left: 25px solid white;
-            margin-left: 5px;
+            border-top: 13px solid transparent;
+            border-bottom: 13px solid transparent;
+            border-left: 22px solid white;
+            margin-left: 4px;
         }
 
-        @keyframes flipOut {
-            0% {
-                opacity: 1;
-                transform: rotateY(0deg);
+        /* ============================================
+           SOURCE CODE
+           ============================================ */
+        .source-section {
+            background: var(--white);
+            border: var(--border);
+            border-radius: var(--border-radius);
+            padding: 3rem;
+            margin-bottom: 5rem;
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+        }
+
+        .source-section h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            letter-spacing: -0.5px;
+        }
+
+        .source-section p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            max-width: 600px;
+            margin: 0 auto 1rem;
+            line-height: 1.6;
+        }
+
+        .source-features {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.6rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .source-feature {
+            background: var(--green-light);
+            border: 2px solid var(--green-dark);
+            border-radius: 6px;
+            padding: 0.3rem 0.7rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--green-dark);
+        }
+
+        /* ============================================
+           FOOTER
+           ============================================ */
+        footer {
+            border-top: var(--border);
+            padding: 2.5rem 0;
+            margin-top: 2rem;
+        }
+
+        .footer-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-brand {
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .footer-brand span {
+            color: var(--green-dark);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: color var(--transition);
+        }
+
+        .footer-links a:hover {
+            color: var(--text-main);
+        }
+
+        .footer-copy {
+            width: 100%;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 1024px) {
+            .hero {
+                gap: 2rem;
             }
 
-            100% {
-                opacity: 0;
-                transform: rotateY(90deg);
+            .hero h1 {
+                font-size: 2.75rem;
+            }
+
+            .controls-grid {
+                grid-template-columns: 1fr 1fr;
             }
         }
 
-        @keyframes flipIn {
-            0% {
-                opacity: 0;
-                transform: rotateY(-90deg);
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1.25rem;
             }
 
-            100% {
-                opacity: 1;
-                transform: rotateY(0deg);
-            }
-        }
-
-        @keyframes hopLeft {
-
-            0%,
-            100% {
-                transform: scaleX(1) translateY(0);
+            header {
+                margin-bottom: 2.5rem;
             }
 
-            50% {
-                transform: scaleX(1) translateY(-40px);
+            nav {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: var(--bg-color);
+                flex-direction: column;
+                padding: 1rem 2rem;
+                border-bottom: var(--border);
+                gap: 1rem;
+                z-index: 100;
             }
-        }
 
-        @keyframes hopRight {
-
-            0%,
-            100% {
-                transform: scaleX(-1) translateY(0);
+            nav.open {
+                display: flex;
             }
 
-            50% {
-                transform: scaleX(-1) translateY(-40px);
+            .nav-toggle {
+                display: block;
             }
-        }
 
-        @media (max-width: 900px) {
+            header {
+                position: relative;
+            }
 
-            .hero,
+            .hero {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .hero h1 {
+                font-size: 2.25rem;
+            }
+
+            .hero-sub {
+                margin: 0 auto 2rem;
+            }
+
+            .hero-actions {
+                justify-content: center;
+            }
+
+            .hero-features {
+                justify-content: center;
+            }
+
+            .hero-image {
+                justify-content: center;
+            }
+
+            .hero-card {
+                max-width: 320px;
+            }
+
+            .stats-section {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .steps-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+            }
+
+            .step-arrow {
+                display: none;
+            }
+
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+
             .video-section {
                 flex-direction: column;
                 text-align: center;
             }
 
-            .hero-actions,
-            .hero-features {
+            .video-text {
+                order: 2;
+            }
+
+            .video-player {
+                order: 1;
+                width: 100%;
+            }
+
+            .perf-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .arch-sub-nodes {
+                margin-left: 0;
+            }
+
+            .generator-section {
+                padding: 1.5rem;
+            }
+
+            .source-section {
+                padding: 2rem 1.5rem;
+            }
+
+            .footer-inner {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .footer-links {
                 justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 {
+                font-size: 1.75rem;
             }
 
             .stats-section {
-                flex-direction: column;
-                gap: 2rem;
-            }
-
-            .stat-item {
-                border-right: none !important;
-                margin-right: 0 !important;
+                grid-template-columns: 1fr;
             }
 
             .steps-container {
-                flex-direction: column;
-                gap: 2rem;
+                grid-template-columns: 1fr;
             }
 
-            .step-connector {
-                display: none;
-            }
-        }
-
-        .side-deco {
-            position: fixed;
-            font-size: 3rem;
-            opacity: 0.15;
-            z-index: -1;
-            pointer-events: none;
-            animation: floatSide 6s ease-in-out infinite;
-        }
-
-        .side-deco.left-1 {
-            top: 15%;
-            left: 2%;
-            animation-delay: 0s;
-        }
-
-        .side-deco.left-2 {
-            top: 45%;
-            left: 4%;
-            animation-delay: 2s;
-        }
-
-        .side-deco.left-3 {
-            top: 75%;
-            left: 3%;
-            animation-delay: 4s;
-        }
-
-        .side-deco.right-1 {
-            top: 20%;
-            right: 2%;
-            animation-delay: 1s;
-        }
-
-        .side-deco.right-2 {
-            top: 55%;
-            right: 1%;
-            animation-delay: 3s;
-        }
-
-        .side-deco.right-3 {
-            top: 80%;
-            right: 3%;
-            animation-delay: 5s;
-        }
-
-        @keyframes floatSide {
-
-            0%,
-            100% {
-                transform: translateY(0) rotate(0deg);
+            .section-header h2 {
+                font-size: 1.75rem;
             }
 
-            50% {
-                transform: translateY(-20px) rotate(10deg);
-            }
-        }
-
-        @keyframes blink {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0;
+            .prompt-chips {
+                justify-content: center;
             }
         }
     </style>
 </head>
 
 <body>
-    <!-- Floating Side Decorations -->
-    <div class="side-deco left-1">⚽</div>
-    <div class="side-deco left-2">🧠</div>
-    <div class="side-deco left-3">⚙️</div>
-    <div class="side-deco right-1">💻</div>
-    <div class="side-deco right-2">🚀</div>
-    <div class="side-deco right-3">⚡</div>
 
     <div class="container">
 
+        <!-- ============================================
+             HEADER
+             ============================================ -->
         <header>
             <a href="#" class="logo">
-                <span class="logo-icon">🧠</span> NANO-<span>MIND</span>
+                <span class="logo-dot"></span> NANO-<span>MIND</span>
             </a>
-            <nav>
-                <a href="#features">Features</a>
-                <a href="#demo">Demo</a>
+
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <nav id="mainNav">
+                <a href="#generator">Generator</a>
+                <a href="#how-it-works">How It Works</a>
                 <a href="#architecture">Architecture</a>
-                <a href="#source">Source Code</a>
+                <a href="#performance">Performance</a>
+                <a href="https://github.com/sumeet1212khatri/Nano-Mind" target="_blank" class="github-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
+                        </path>
+                    </svg>
+                    Star on GitHub
+                </a>
             </nav>
-            <a href="https://github.com/sumeet1212khatri/Nano-Mind" target="_blank" class="github-btn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path
-                        d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
-                    </path>
-                </svg>
-                Star on GitHub
-            </a>
         </header>
 
+        <!-- ============================================
+             HERO
+             ============================================ -->
         <section class="hero" id="features">
             <div class="hero-content">
-                <div class="hero-tag">Your Personal AI Assistant!</div>
-                <h1>A Custom ChatGPT.<br><span>Built Just For You.</span></h1>
-                <p>Nano-Mind is a super-smart Artificial Intelligence that runs entirely on your own computer. No
-                    expensive servers, no big tech companies just pure, instant answers right at your fingertips!</p>
+                <div class="hero-tag">Story Generation Engine</div>
+                <h1>Turn an idea<br>into a <span class="accent">story.</span></h1>
+                <p class="hero-sub">Nano-Mind is a lightweight GPT-2-style language model running on a custom C++
+                    inference engine. Give it a story idea and generate text directly in your browser.</p>
 
                 <div class="hero-actions">
-                    <a href="https://huggingface.co/spaces/NOT-OMEGA/NanoMind" target="_blank" class="btn-primary">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M8 5v14l11-7z" />
-                        </svg> Launch Live Demo
+                    <a href="#generator" class="btn-primary">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        Generate a Story
                     </a>
                     <a href="https://github.com/sumeet1212khatri/Nano-Mind" target="_blank" class="btn-secondary">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2">
-                            <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" />
-                        </svg> View Source Code
+                            <path d="M16 18l6-6-6-6M8 6l-6 6 6 6"></path>
+                        </svg>
+                        View Source
                     </a>
                 </div>
 
                 <div class="hero-features">
                     <div class="feature-item">
-                        <div class="feature-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                            </svg>
-                        </div>
+                        <div class="feature-icon">⚙️</div>
                         <div class="feature-text">
-                            <h4>Lightweight</h4>
-                            <p>Minimal dependencies</p>
+                            <h4>CPU Inference</h4>
+                            <p>No GPU required</p>
                         </div>
                     </div>
                     <div class="feature-item">
-                        <div class="feature-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
-                        </div>
+                        <div class="feature-icon">🔧</div>
                         <div class="feature-text">
-                            <h4>Blazing Fast</h4>
-                            <p>Optimized for speed</p>
+                            <h4>C++17 Engine</h4>
+                            <p>Custom built</p>
                         </div>
                     </div>
                     <div class="feature-item">
-                        <div class="feature-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                            </svg>
-                        </div>
+                        <div class="feature-icon">📖</div>
                         <div class="feature-text">
-                            <h4>Private by Design</h4>
-                            <p>100% local inference</p>
+                            <h4>Story Trained</h4>
+                            <p>GPT-2 story dataset</p>
                         </div>
                     </div>
                 </div>
@@ -835,283 +1428,353 @@
             </div>
         </section>
 
-        <!-- Interactive Demo Section -->
-        <section class="demo-section"
-            style="background: var(--white); border: var(--border-width) solid var(--text-main); border-radius: 16px; padding: 2rem; margin-bottom: 6rem; box-shadow: var(--shadow-lg);">
-            <div class="section-header" style="margin-bottom: 2rem;">
+        <!-- ============================================
+             STORY GENERATOR
+             ============================================ -->
+        <section class="generator-section" id="generator">
+            <div class="generator-header">
                 <div class="section-tag">Try It Out</div>
-                <h2>Talk to Nano-Mind</h2>
-                <div id="statusText" style="margin-top: 10px; font-weight: bold; color: var(--text-muted);">Checking
-                    server...</div>
+                <h2>Create a Story</h2>
+                <div class="status-indicator" id="statusIndicator">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">Checking server…</span>
+                </div>
             </div>
 
-            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-                <textarea id="promptInput"
-                    placeholder="Type your prompt here... e.g. Explain how a CPU-based transformer inference engine works."
-                    style="width: 100%; height: 120px; border: var(--border-width) solid var(--text-main); border-radius: 12px; padding: 1rem; font-family: inherit; font-size: 1.1rem; resize: vertical; box-shadow: var(--shadow-sm); outline: none;"></textarea>
+            <div>
+                <label for="promptInput" class="prompt-label">Story Idea</label>
+                <textarea id="promptInput" class="prompt-textarea"
+                    placeholder="Enter a story idea…" aria-label="Enter your story idea"></textarea>
 
-                <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 200px;">
-                        <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Max Tokens: <span
-                                id="maxTokensVal" style="color: var(--green);">100</span></label>
+                <div class="prompt-chips" role="group" aria-label="Example story prompts">
+                    <button class="prompt-chip" type="button">mystery in an old house</button>
+                    <button class="prompt-chip" type="button">space adventure</button>
+                    <button class="prompt-chip" type="button">robot and a lost child</button>
+                    <button class="prompt-chip" type="button">dark forest</button>
+                    <button class="prompt-chip" type="button">train station at midnight</button>
+                </div>
+
+                <div class="controls-grid">
+                    <div class="control-group">
+                        <label for="maxTokens">Maximum Tokens: <span class="control-value"
+                                id="maxTokensVal">100</span></label>
                         <input type="range" id="maxTokens" min="1" max="500" value="100"
-                            style="width: 100%; cursor: pointer;"
                             oninput="document.getElementById('maxTokensVal').textContent = this.value">
                     </div>
-                    <div style="flex: 1; min-width: 200px;">
-                        <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Temperature: <span
-                                id="tempVal" style="color: var(--green);">0.8</span></label>
+                    <div class="control-group">
+                        <label for="temperature">Temperature: <span class="control-value"
+                                id="tempVal">0.8</span></label>
                         <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.8"
-                            style="width: 100%; cursor: pointer;"
                             oninput="document.getElementById('tempVal').textContent = this.value">
                     </div>
+                    <div class="control-group">
+                        <label for="topK">Top-K: <span class="control-value" id="topKVal">40</span></label>
+                        <input type="range" id="topK" min="1" max="100" value="40"
+                            oninput="document.getElementById('topKVal').textContent = this.value">
+                    </div>
                 </div>
 
-                <button id="generateBtn" class="btn-primary"
-                    style="justify-content: center; font-size: 1.3rem; padding: 1rem; cursor: pointer; border: var(--border-width) solid var(--text-main); box-shadow: var(--shadow-sm); transition: transform 0.1s;">Generate
-                    Text</button>
+                <button id="generateBtn" class="btn-primary generate-btn" type="button">
+                    Generate Story
+                </button>
 
-                <div id="outputSection"
-                    style="display: none; background: var(--bg-color); border: var(--border-width) solid var(--text-main); border-radius: 12px; padding: 1.5rem; margin-top: 1rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);">
-                    <div
-                        style="font-size: 1.1rem; white-space: pre-wrap; line-height: 1.6; min-height: 80px; font-family: monospace;">
-                        <span id="promptEcho" style="opacity: 0.6; font-style: italic;"></span><br><br><span
-                            id="outputText"></span><span id="cursor"
-                            style="display: inline-block; width: 8px; height: 1.2em; background-color: var(--text-main); vertical-align: middle; animation: blink 1s step-end infinite; margin-left: 2px;"></span>
-                    </div>
-
-                    <div
-                        style="display: flex; gap: 1rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 2px dashed var(--text-main); flex-wrap: wrap;">
-                        <div style="flex: 1; min-width: 100px;"><strong>Tokens In:</strong> <span
-                                id="metricTokensIn">-</span></div>
-                        <div style="flex: 1; min-width: 100px;"><strong>Tokens Out:</strong> <span
-                                id="metricTokensOut">-</span></div>
-                        <div style="flex: 1; min-width: 100px;"><strong>Latency:</strong> <span
-                                id="metricLatency">-</span></div>
-                        <div style="flex: 1; min-width: 100px;"><strong>Speed:</strong> <span id="metricSpeed">-</span>
+                <!-- Story Output -->
+                <div class="story-output" id="storyOutput">
+                    <div class="story-card">
+                        <div class="story-card-header">Your Story</div>
+                        <div class="story-card-body">
+                            <div class="story-text" id="storyText"></div>
+                            <span class="story-cursor" id="storyCursor"></span>
+                        </div>
+                        <div class="story-metrics" id="storyMetrics">
+                            <span id="metricSummary">—</span>
                         </div>
                     </div>
+
+                    <div class="story-actions">
+                        <button class="story-action-btn" id="copyBtn" type="button">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            Copy Story
+                        </button>
+                        <button class="story-action-btn" id="generateAgainBtn" type="button">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                            Generate Again
+                        </button>
+                        <button class="story-action-btn" id="clearBtn" type="button">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            Clear
+                        </button>
+                    </div>
                 </div>
-                <div id="errorMessage"
-                    style="display: none; color: #b91c1c; font-weight: bold; border: var(--border-width) solid #b91c1c; padding: 1rem; border-radius: 12px; background: #fee2e2;">
-                </div>
+
+                <div class="error-message" id="errorMessage"></div>
             </div>
         </section>
 
-        <!-- Stats Section Moved Here! -->
+        <!-- ============================================
+             STATS
+             ============================================ -->
         <section class="stats-section">
-            <div class="stat-item">
-                <div class="stat-icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                </div>
-                <div class="stat-text">
-                    <h2>82.3</h2>
-                    <h4>Tokens Per Second</h4>
-                    <p>Ultra-fast token generation</p>
-                </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚙️</div>
+                <h3>CPU Inference</h3>
+                <p>No GPU required</p>
             </div>
-            <div class="stat-item">
-                <div class="stat-icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="3" y1="9" x2="21" y2="9"></line>
-                        <line x1="9" y1="21" x2="9" y2="9"></line>
-                    </svg>
-                </div>
-                <div class="stat-text">
-                    <h2>1940ms</h2>
-                    <h4>Response Time (Warm)</h4>
-                    <p>Lightning quick replies</p>
-                </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔧</div>
+                <h3>C++17</h3>
+                <p>Modern standard</p>
             </div>
-            <div class="stat-item">
-                <div class="stat-icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="23 4 23 10 17 10"></polyline>
-                        <polyline points="1 20 1 14 7 14"></polyline>
-                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                    </svg>
+            <div class="stat-card">
+                <div class="stat-icon">⚡</div>
+                <h3>AVX2 + FMA</h3>
+                <p>SIMD optimization</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔄</div>
+                <h3>OpenMP</h3>
+                <p>Multi-threaded</p>
+            </div>
+        </section>
+
+        <!-- ============================================
+             HOW IT WORKS
+             ============================================ -->
+        <section id="how-it-works">
+            <div class="section-header">
+                <div class="section-tag">How It Works</div>
+                <h2>From idea to story in four steps.</h2>
+                <p>Your prompt travels through a complete inference pipeline built from scratch.</p>
+            </div>
+
+            <div class="steps-container">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-icon-box">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                    </div>
+                    <h4>Enter a Story Idea</h4>
+                    <p>Write a creative prompt or pick a suggestion.</p>
+                    <div class="step-arrow">→</div>
                 </div>
-                <div class="stat-text">
-                    <h2>2.47x</h2>
-                    <h4>Cache Speedup</h4>
-                    <p>Smarter caching, faster results</p>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-icon-box">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"></polyline>
+                            <polyline points="8 6 2 12 8 18"></polyline>
+                        </svg>
+                    </div>
+                    <h4>Tokenize</h4>
+                    <p>FastAPI + tiktoken encode the prompt using GPT-2 BPE.</p>
+                    <div class="step-arrow">→</div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-icon-box">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                            <rect x="9" y="9" width="6" height="6"></rect>
+                            <line x1="9" y1="1" x2="9" y2="4"></line>
+                            <line x1="15" y1="1" x2="15" y2="4"></line>
+                            <line x1="9" y1="20" x2="9" y2="23"></line>
+                            <line x1="15" y1="20" x2="15" y2="23"></line>
+                            <line x1="20" y1="9" x2="23" y2="9"></line>
+                            <line x1="20" y1="14" x2="23" y2="14"></line>
+                            <line x1="1" y1="9" x2="4" y2="9"></line>
+                            <line x1="1" y1="14" x2="4" y2="14"></line>
+                        </svg>
+                    </div>
+                    <h4>Generate Tokens</h4>
+                    <p>C++17 transformer forward pass with KV-cache and Top-K sampling.</p>
+                    <div class="step-arrow">→</div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-icon-box">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                    </div>
+                    <h4>Decode &amp; Display</h4>
+                    <p>Generated tokens are decoded back to text and displayed as your story.</p>
                 </div>
             </div>
         </section>
 
-        <section class="section-header">
-            <div class="section-tag">How It Works</div>
-            <h2>Simple. Powerful. Efficient.</h2>
-            <p>Think of it like a conveyor belt in a factory.</p>
-        </section>
-
-        <section class="steps-container">
-            <div class="step-connector"></div>
-
-            <div class="step">
-                <div class="step-number">1</div>
-                <div class="step-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                </div>
-                <h4>You Ask</h4>
-                <p>You type a question or start a conversation.</p>
-            </div>
-
-            <div class="step">
-                <div class="step-number">2</div>
-                <div class="step-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="16 18 22 12 16 6"></polyline>
-                        <polyline points="8 6 2 12 8 18"></polyline>
-                    </svg>
-                </div>
-                <h4>Python Catches It</h4>
-                <p>Our Python server receives your message and forwards it.</p>
-            </div>
-
-            <div class="step">
-                <div class="step-number">3</div>
-                <div class="step-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
-                        <rect x="9" y="9" width="6" height="6"></rect>
-                        <line x1="9" y1="1" x2="9" y2="4"></line>
-                        <line x1="15" y1="1" x2="15" y2="4"></line>
-                        <line x1="9" y1="20" x2="9" y2="23"></line>
-                        <line x1="15" y1="20" x2="15" y2="23"></line>
-                        <line x1="20" y1="9" x2="23" y2="9"></line>
-                        <line x1="20" y1="14" x2="23" y2="14"></line>
-                        <line x1="1" y1="9" x2="4" y2="9"></line>
-                        <line x1="1" y1="14" x2="4" y2="14"></line>
-                    </svg>
-                </div>
-                <h4>C++ Engine Thinks</h4>
-                <p>The ultra-fast C++ engine processes the input and generates the answer.</p>
-            </div>
-
-            <div class="step">
-                <div class="step-number">4</div>
-                <div class="step-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                    </svg>
-                </div>
-                <h4>Answer Streams Back</h4>
-                <p>The response flows back to you in real-time.</p>
-            </div>
-        </section>
-
+        <!-- ============================================
+             TECH STACK
+             ============================================ -->
         <section class="tech-stack" id="source">
-            <div class="section-header" style="margin-bottom: 2rem;">
-                <div class="section-tag">What's Under The Hood?</div>
-                <p style="font-size: 1rem;">The tools and tech that power Nano-Mind.</p>
+            <div class="section-header" style="margin-bottom: 1.5rem;">
+                <div class="section-tag">Tech Stack</div>
+                <p>The tools and technology that power Nano-Mind.</p>
             </div>
             <div class="tech-grid">
-                <div class="tech-badge"><span class="tech-icon">🐍</span> Python</div>
                 <div class="tech-badge"><span class="tech-icon">⚙️</span> C++17</div>
+                <div class="tech-badge"><span class="tech-icon">🐍</span> Python</div>
                 <div class="tech-badge"><span class="tech-icon">⚡</span> FastAPI</div>
-                <div class="tech-badge"><span class="tech-icon">🔥</span> PyTorch</div>
-                <div class="tech-badge"><span class="tech-icon">🐳</span> Docker</div>
-                <div class="tech-badge"><span class="tech-icon">🤗</span> Hugging Face</div>
-                <div class="tech-badge"><span class="tech-icon">🚀</span> AVX2 SIMD</div>
+                <div class="tech-badge"><span class="tech-icon">🔤</span> tiktoken</div>
+                <div class="tech-badge"><span class="tech-icon">🚀</span> AVX2/FMA</div>
                 <div class="tech-badge"><span class="tech-icon">🔄</span> OpenMP</div>
+                <div class="tech-badge"><span class="tech-icon">🐳</span> Docker</div>
+                <div class="tech-badge"><span class="tech-icon">🤗</span> Hugging Face Spaces</div>
             </div>
         </section>
 
-        <section class="architecture-container" id="architecture">
-            <div class="section-header" style="margin-bottom: 2rem;">
+        <!-- ============================================
+             ARCHITECTURE
+             ============================================ -->
+        <section class="architecture-section" id="architecture">
+            <div class="section-header">
                 <div class="section-tag">Architecture</div>
                 <h2>System Architecture</h2>
-                <p>Here's the full blueprint of how all the pieces of Nano-Mind connect together.</p>
+                <p>The complete inference pipeline from your browser to the generated story.</p>
             </div>
 
-            <div style="position: relative; max-width: 900px; margin: 0 auto;">
-                <div class="carousel-track" id="carouselTrack">
-                    <!-- Slide 1 -->
-                    <div class="carousel-slide active" id="slide-0"
-                        style="width: 100%; transition: all 0.6s ease; padding: 1rem;">
-                        <a href="https://app.eraser.io/workspace/RMsX2vhTVpB6uaZgnBqV?origin=share" target="_blank"
-                            style="display: block;">
-                            <img src="https://github.com/user-attachments/assets/396dac9c-4256-48d7-808b-8fc4718df27a"
-                                alt="Nano-Mind Overview Diagram" style="width: 100%; border-radius: 8px;">
-                        </a>
+            <div class="arch-pipeline">
+                <div class="arch-node">
+                    <div class="arch-node-icon">🌐</div>
+                    <div class="arch-node-content">
+                        <h4>Browser</h4>
+                        <p>Frontend sends POST request with prompt and generation parameters.</p>
                     </div>
-                    <!-- Slide 2 -->
-                    <div class="carousel-slide" id="slide-1"
-                        style="width: 100%; display: none; transition: all 0.6s ease; padding: 1rem;">
-                        <a href="https://app.eraser.io/workspace/RMsX2vhTVpB6uaZgnBqV?origin=share" target="_blank"
-                            style="
-                            display: block; text-decoration: none; color: #fff;
-                            background: #111; padding: 3rem 2rem; text-align: center;
-                            min-height: 400px; border-radius: 8px;
-                        ">
-                            <div
-                                style="font-size: 1.5rem; font-weight: bold; color: var(--green); margin-bottom: 2rem;">
-                                Detailed System Architecture</div>
-                            <div
-                                style="display: flex; flex-direction: column; align-items: center; gap: 0.8rem; font-size: 1rem;">
-                                <div style="border: 1px solid #fff; border-radius: 8px; padding: 8px 24px;">Frontend
-                                    (ChatUI + Benchmarks)</div>
-                                <div>↓ SSE/Chat</div>
-                                <div style="border: 1px solid #fff; border-radius: 8px; padding: 8px 24px;">FastAPI +
-                                    SSE (main.py)</div>
-                                <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                                    <div
-                                        style="border: 1px solid var(--green); border-radius: 8px; padding: 6px 12px; color: var(--green);">
-                                        Engine Pool (N=3)</div>
-                                    <div
-                                        style="border: 1px solid var(--green); border-radius: 8px; padding: 6px 12px; color: var(--green);">
-                                        Session Manager</div>
-                                </div>
-                                <div>↓ STDin/STDout Pipe</div>
-                                <div style="border: 1px solid #fff; border-radius: 8px; padding: 8px 24px;">C++ Engine
-                                    (inference.cpp)</div>
-                                <div>↓</div>
-                                <div
-                                    style="border: 1px solid var(--green); border-radius: 8px; padding: 8px 24px; color: var(--green);">
-                                    KV-Cache (20 Sessions)</div>
-                            </div>
-                            <div
-                                style="margin-top: 2rem; background: var(--green); color: #000; display: inline-block; padding: 8px 20px; border-radius: 50px; font-weight: 600; font-size: 0.9rem;">
-                                Click to open on Eraser.io</div>
-                        </a>
+                </div>
+                <div class="arch-arrow">↓</div>
+
+                <div class="arch-node">
+                    <div class="arch-node-icon">⚡</div>
+                    <div class="arch-node-content">
+                        <h4>FastAPI REST API</h4>
+                        <p>Python backend receives the request and orchestrates the pipeline.</p>
+                    </div>
+                </div>
+                <div class="arch-arrow">↓</div>
+
+                <div class="arch-node">
+                    <div class="arch-node-icon">🔤</div>
+                    <div class="arch-node-content">
+                        <h4>tiktoken GPT-2 BPE</h4>
+                        <p>Encodes the text prompt into token IDs for the transformer.</p>
+                    </div>
+                </div>
+                <div class="arch-arrow">↓</div>
+
+                <div class="arch-node">
+                    <div class="arch-node-icon">⚙️</div>
+                    <div class="arch-node-content">
+                        <h4>C++17 Inference Engine</h4>
+                        <p>Custom transformer implementation with CPU-level optimization.</p>
+                    </div>
+                </div>
+                <div class="arch-arrow">↓</div>
+
+                <div class="arch-node">
+                    <div class="arch-node-icon">🧠</div>
+                    <div class="arch-node-content">
+                        <h4>Transformer Forward Pass</h4>
+                        <p>Processes tokens through the model layers to generate new tokens.</p>
                     </div>
                 </div>
 
-                <div class="carousel-arrow left" onclick="carouselPrev()"><svg width="24" height="24"
-                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg></div>
-                <div class="carousel-arrow right" onclick="carouselNext()"><svg width="24" height="24"
-                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg></div>
-            </div>
-
-            <div style="display: flex; justify-content: center; gap: 8px; margin-top: 1rem;">
-                <div class="carousel-dot" id="dot-0" onclick="carouselGoTo(0)"
-                    style="width: 8px; height: 8px; border-radius: 50%; background: var(--green); cursor: pointer;">
+                <div class="arch-sub-nodes">
+                    <span class="arch-sub-node">Multi-Head Self-Attention</span>
+                    <span class="arch-sub-node">KV-Cache</span>
+                    <span class="arch-sub-node">LayerNorm</span>
+                    <span class="arch-sub-node">GELU</span>
+                    <span class="arch-sub-node">Top-K Sampling</span>
                 </div>
-                <div class="carousel-dot" id="dot-1" onclick="carouselGoTo(1)"
-                    style="width: 8px; height: 8px; border-radius: 50%; background: #ccc; cursor: pointer;"></div>
+
+                <div class="arch-arrow" style="margin-top: 0.5rem;">↓</div>
+
+                <div class="arch-node">
+                    <div class="arch-node-icon">📖</div>
+                    <div class="arch-node-content">
+                        <h4>Generated Story</h4>
+                        <p>Tokens decoded back to text and returned to the browser.</p>
+                    </div>
+                </div>
             </div>
         </section>
 
+        <!-- ============================================
+             PERFORMANCE
+             ============================================ -->
+        <section class="perf-section" id="performance">
+            <div class="section-header">
+                <div class="section-tag">Performance</div>
+                <h2>Live Hugging Face Benchmark</h2>
+                <p>Verified performance from 20 successful requests to the deployed backend.</p>
+            </div>
+
+            <div class="perf-grid">
+                <div class="perf-card">
+                    <div class="perf-value">49.7 <span style="font-size: 0.9rem; font-weight: 600;">t/s</span></div>
+                    <div class="perf-label">Median End-to-End Throughput</div>
+                    <div class="perf-desc">Tokens generated per second</div>
+                </div>
+                <div class="perf-card">
+                    <div class="perf-value">1,594 <span style="font-size: 0.9rem; font-weight: 600;">ms</span></div>
+                    <div class="perf-label">Median End-to-End Latency</div>
+                    <div class="perf-desc">Total round-trip time</div>
+                </div>
+                <div class="perf-card">
+                    <div class="perf-value">825 <span style="font-size: 0.9rem; font-weight: 600;">ms</span></div>
+                    <div class="perf-label">Server-Side Inference Latency</div>
+                    <div class="perf-desc">C++ engine processing time</div>
+                </div>
+                <div class="perf-card">
+                    <div class="perf-value">20/20</div>
+                    <div class="perf-label">Successful Requests</div>
+                    <div class="perf-desc">100% success rate</div>
+                </div>
+            </div>
+
+            <div class="perf-note">
+                <strong>Note:</strong> End-to-end throughput includes network latency, Hugging Face proxy, FastAPI
+                processing, tokenization, C++ inference, decoding, and response handling. Server-side latency reflects
+                only the C++ inference engine.
+            </div>
+        </section>
+
+        <!-- ============================================
+             VIDEO
+             ============================================ -->
         <section class="video-section" id="demo">
             <div class="video-text">
                 <div class="section-tag" style="text-align: left;">See It In Action</div>
-                <h2>Watch Nano-Mind<br>in real-time.</h2>
-                <p>From prompt to response in milliseconds. See the full pipeline at work.</p>
+                <h2>See the story generator<br>in action.</h2>
+                <p>Watch Nano-Mind turn a prompt into generated text through its C++ inference engine.</p>
                 <a href="https://youtu.be/OBEMQljAUis" target="_blank" class="btn-primary"
                     style="display: inline-flex;">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M8 5v14l11-7z" />
-                    </svg> Watch Full Demo
+                    </svg> Watch Demo
                 </a>
             </div>
 
@@ -1119,7 +1782,8 @@
                 <a id="video-thumb" href="https://youtu.be/OBEMQljAUis" target="_blank"
                     style="display: block; text-decoration: none;">
                     <div class="video-wrapper">
-                        <img src="https://img.youtube.com/vi/OBEMQljAUis/maxresdefault.jpg" alt="Nano-Mind Demo Video">
+                        <img src="https://img.youtube.com/vi/OBEMQljAUis/maxresdefault.jpg"
+                            alt="Nano-Mind Story Generator Demo Video">
                         <div class="play-btn-overlay">
                             <div></div>
                         </div>
@@ -1134,235 +1798,278 @@
             </div>
         </section>
 
+        <!-- ============================================
+             SOURCE CODE
+             ============================================ -->
+        <section class="source-section" id="source-code">
+            <div class="section-tag">Open Source</div>
+            <h2>Built from the engine up.</h2>
+            <p>Unlike applications that simply call a hosted LLM API, Nano-Mind includes a custom C++ transformer
+                inference implementation with CPU-level optimization.</p>
+
+            <div class="source-features">
+                <span class="source-feature">Transformer Forward Pass</span>
+                <span class="source-feature">KV-Cache</span>
+                <span class="source-feature">AVX2/FMA</span>
+                <span class="source-feature">OpenMP</span>
+                <span class="source-feature">Custom Binary Model Loading</span>
+            </div>
+
+            <p style="margin-bottom: 1.5rem;">Explore the full implementation on GitHub.</p>
+
+            <a href="https://github.com/sumeet1212khatri/Nano-Mind" target="_blank" class="btn-primary"
+                style="display: inline-flex;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
+                    </path>
+                </svg>
+                View Source Code
+            </a>
+        </section>
+
     </div>
 
-    <!-- Animated Rabbit -->
-    <div id="rabbit-container" style="
-        position: fixed;
-        bottom: 20px;
-        left: -200px;
-        z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        transition: left 1s ease-out;
-    ">
-        <div id="rabbit-bubble" style="
-            background: #fff;
-            border: 3px solid #111;
-            border-radius: 20px;
-            padding: 8px 16px;
-            font-weight: bold;
-            box-shadow: 4px 4px 0 #111;
-            opacity: 0;
-            transition: opacity 0.3s;
-            margin-bottom: -10px;
-            white-space: nowrap;
-            font-family: 'Comic Sans MS', cursive;
-        ">Hii!</div>
-        <div id="rabbit" style="
-            font-size: 5rem;
-            transform: scaleX(-1);
-            user-select: none;
-        ">🐇</div>
-    </div>
+    <!-- ============================================
+         FOOTER
+         ============================================ -->
+    <footer>
+        <div class="container">
+            <div class="footer-inner">
+                <div class="footer-brand">
+                    <span class="logo-dot"></span> NANO-<span>MIND</span>
+                </div>
+                <div class="footer-links">
+                    <a href="https://nanomind.qd.je/" target="_blank">Live Demo</a>
+                    <a href="https://huggingface.co/spaces/NOT-OMEGA/NanoMind" target="_blank">Hugging Face</a>
+                    <a href="https://github.com/sumeet1212khatri/Nano-Mind" target="_blank">GitHub</a>
+                    <a href="https://www.youtube.com/watch?v=OBEMQljAUis" target="_blank">YouTube</a>
+                </div>
+            </div>
+            <div class="footer-copy">
+                Nano-Mind — AI Story Generator · C++ Inference Engine
+            </div>
+        </div>
+    </footer>
 
-    <!-- Scripts -->
+    <!-- Copy Toast -->
+    <div class="copy-toast" id="copyToast">✓ Story copied to clipboard</div>
+
+    <!-- ============================================
+         SCRIPTS
+         ============================================ -->
     <script>
-        // Video hybrid logic
-        if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
-            document.getElementById('video-thumb').style.display = 'none';
-            var embedDiv = document.getElementById('video-embed');
-            embedDiv.style.display = 'block';
-            var iframe = embedDiv.querySelector('iframe');
-            iframe.src = iframe.getAttribute('data-src');
-        }
-
-        // Carousel logic
+        // ============================================
+        // MOBILE NAV TOGGLE
+        // ============================================
         (function () {
-            var currentSlide = 0;
-            var totalSlides = 2;
-
-            window.carouselNext = function () { carouselGoTo((currentSlide + 1) % totalSlides); };
-            window.carouselPrev = function () { carouselGoTo((currentSlide - 1 + totalSlides) % totalSlides); };
-            window.carouselGoTo = function (index) {
-                var curr = document.getElementById('slide-' + currentSlide);
-                curr.style.animation = 'flipOut 0.3s ease forwards';
-                setTimeout(function () {
-                    curr.style.display = 'none';
-                    curr.style.animation = '';
-                    var next = document.getElementById('slide-' + index);
-                    next.style.display = 'block';
-                    next.style.animation = 'flipIn 0.3s ease forwards';
-                    currentSlide = index;
-                    for (var i = 0; i < totalSlides; i++) {
-                        document.getElementById('dot-' + i).style.background = (i === index) ? 'var(--green)' : '#ccc';
-                    }
-                }, 300);
-            };
+            const toggle = document.getElementById('navToggle');
+            const nav = document.getElementById('mainNav');
+            if (toggle && nav) {
+                toggle.addEventListener('click', function () {
+                    nav.classList.toggle('open');
+                });
+                // Close nav when a link is clicked
+                nav.querySelectorAll('a').forEach(function (link) {
+                    link.addEventListener('click', function () {
+                        nav.classList.remove('open');
+                    });
+                });
+            }
         })();
 
-        // Interactive Rabbit Logic
-        (function () {
-            var container = document.getElementById('rabbit-container');
-            var bubble = document.getElementById('rabbit-bubble');
-            var rabbit = document.getElementById('rabbit');
-
-            var quotes = [
-                "What's up, doc?",
-                "I'm late, I'm late!",
-                "Nano-Mind is blazing fast!",
-                "Catch me if you can!",
-                "Do you have any carrots?",
-                "Hop hop hop!"
-            ];
-
-            var isPaused = false;
-            var position = -200;
-            var speed = 3;
-
-            function animate() {
-                if (!isPaused) {
-                    position += speed;
-                    if (position > window.innerWidth + 200) {
-                        position = -300; // Reset to offscreen left
-                    }
-                    container.style.left = position + 'px';
-                }
-                requestAnimationFrame(animate);
+        // ============================================
+        // VIDEO HYBRID LOGIC
+        // ============================================
+        if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+            var thumbEl = document.getElementById('video-thumb');
+            var embedDiv = document.getElementById('video-embed');
+            if (thumbEl && embedDiv) {
+                thumbEl.style.display = 'none';
+                embedDiv.style.display = 'block';
+                var iframe = embedDiv.querySelector('iframe');
+                if (iframe) iframe.src = iframe.getAttribute('data-src');
             }
+        }
 
-            // Initial setup
-            container.style.transition = 'none'; // Override CSS transition for smooth JS movement
-            container.style.cursor = 'pointer';
-            rabbit.style.animation = 'hopRight 0.3s infinite';
-
-            // Start animation loop
-            animate();
-
-            // Click interaction
-            container.addEventListener('click', function () {
-                if (isPaused) return; // Ignore if already paused
-
-                isPaused = true;
-                rabbit.style.animation = 'none'; // Stop hopping
-                rabbit.style.transform = 'scaleX(1)'; // Turn to face the user
-
-                // Show random quote
-                bubble.textContent = quotes[Math.floor(Math.random() * quotes.length)];
-                bubble.style.opacity = '1';
-
-                setTimeout(function () {
-                    bubble.style.opacity = '0';
-                    setTimeout(function () {
-                        rabbit.style.animation = 'hopRight 0.3s infinite';
-                        rabbit.style.transform = 'scaleX(-1)'; // Face right again
-                        isPaused = false;
-                    }, 300);
-                }, 2000);
+        // ============================================
+        // PROMPT CHIPS
+        // ============================================
+        (function () {
+            const chips = document.querySelectorAll('.prompt-chip');
+            const textarea = document.getElementById('promptInput');
+            chips.forEach(function (chip) {
+                chip.addEventListener('click', function () {
+                    textarea.value = chip.textContent;
+                    textarea.focus();
+                });
             });
         })();
 
-        // Inference Engine API Integration
+        // ============================================
+        // STORY GENERATION ENGINE
+        // ============================================
         (function () {
             const API_URL = 'https://not-omega-nanomind.hf.space';
+            const statusDot = document.getElementById('statusDot');
             const statusText = document.getElementById('statusText');
             const promptInput = document.getElementById('promptInput');
             const generateBtn = document.getElementById('generateBtn');
-            const outputSection = document.getElementById('outputSection');
-            const promptEcho = document.getElementById('promptEcho');
-            const outputText = document.getElementById('outputText');
-            const cursor = document.getElementById('cursor');
+            const storyOutput = document.getElementById('storyOutput');
+            const storyText = document.getElementById('storyText');
+            const storyCursor = document.getElementById('storyCursor');
+            const metricSummary = document.getElementById('metricSummary');
             const errorMessage = document.getElementById('errorMessage');
+            const copyBtn = document.getElementById('copyBtn');
+            const generateAgainBtn = document.getElementById('generateAgainBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const copyToast = document.getElementById('copyToast');
 
+            // Store the last generated text for copy
+            let lastGeneratedText = '';
+
+            // ---- Health Check ----
             async function checkServerHealth() {
                 try {
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 2000);
-                    const response = await fetch(`${API_URL}/health`, { signal: controller.signal });
+                    const timeoutId = setTimeout(() => controller.abort(), 4000);
+                    const response = await fetch(API_URL + '/health', { signal: controller.signal });
                     clearTimeout(timeoutId);
 
                     if (response.ok) {
-                        statusText.textContent = 'Server Online 🟢 (Hugging Face)';
-                        statusText.style.color = 'var(--green)';
+                        statusDot.className = 'status-dot online';
+                        statusText.textContent = 'Nano-Mind API Online';
+                        statusText.style.color = 'var(--green-dark)';
                     } else {
-                        throw new Error('Error');
+                        throw new Error('Not OK');
                     }
                 } catch (error) {
-                    statusText.textContent = 'Server Offline 🔴 (Hugging Face space may be sleeping)';
-                    statusText.style.color = '#b91c1c';
+                    statusDot.className = 'status-dot offline';
+                    statusText.textContent = 'Nano-Mind API Offline — The inference server may be waking up';
+                    statusText.style.color = 'var(--red)';
                 }
             }
 
-            if (statusText) {
-                checkServerHealth();
-                setInterval(checkServerHealth, 10000);
-            }
+            checkServerHealth();
+            setInterval(checkServerHealth, 15000);
 
+            // ---- Typewriter Effect (visual presentation only) ----
             async function typeWriter(text, element) {
                 element.textContent = '';
-                cursor.style.display = 'inline-block';
-                const chunks = text.match(/.{1,4}/g) || [];
+                storyCursor.style.display = 'inline-block';
+                const chunks = text.match(/.{1,3}/g) || [];
                 for (let i = 0; i < chunks.length; i++) {
                     element.textContent += chunks[i];
-                    await new Promise(r => setTimeout(r, Math.random() * 30 + 10));
+                    await new Promise(r => setTimeout(r, Math.random() * 25 + 10));
                 }
-                cursor.style.animation = 'blink 1s step-end infinite';
+                storyCursor.style.display = 'none';
             }
 
-            if (generateBtn) {
-                generateBtn.addEventListener('click', async () => {
-                    const prompt = promptInput.value.trim();
-                    if (!prompt) return;
+            // ---- Generate ----
+            async function generateStory() {
+                const prompt = promptInput.value.trim();
+                if (!prompt) {
+                    promptInput.focus();
+                    return;
+                }
 
-                    generateBtn.disabled = true;
-                    generateBtn.textContent = 'Generating...';
-                    generateBtn.style.opacity = '0.7';
-                    errorMessage.style.display = 'none';
-                    outputSection.style.display = 'block';
+                generateBtn.disabled = true;
+                generateBtn.textContent = 'Generating Story…';
+                errorMessage.style.display = 'none';
+                storyOutput.style.display = 'block';
+                storyText.textContent = '';
+                storyCursor.style.display = 'inline-block';
+                metricSummary.textContent = '—';
+                lastGeneratedText = '';
 
-                    promptEcho.textContent = prompt;
-                    outputText.textContent = '';
-                    cursor.style.display = 'inline-block';
-                    cursor.style.animation = 'none';
+                // Scroll to output
+                storyOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-                    document.getElementById('metricTokensIn').textContent = '-';
-                    document.getElementById('metricTokensOut').textContent = '-';
-                    document.getElementById('metricLatency').textContent = '-';
-                    document.getElementById('metricSpeed').textContent = '-';
+                try {
+                    const response = await fetch(API_URL + '/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            prompt: prompt,
+                            max_tokens: parseInt(document.getElementById('maxTokens').value),
+                            temperature: parseFloat(document.getElementById('temperature').value),
+                            top_k: parseInt(document.getElementById('topK').value)
+                        })
+                    });
 
-                    try {
-                        const response = await fetch(`${API_URL}/generate`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                prompt: prompt,
-                                max_tokens: parseInt(document.getElementById('maxTokens').value),
-                                temperature: parseFloat(document.getElementById('temperature').value),
-                                top_k: 40
-                            })
-                        });
-
-                        if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
-
-                        const data = await response.json();
-                        await typeWriter(data.generated_text, outputText);
-
-                        document.getElementById('metricTokensIn').textContent = data.tokens_in;
-                        document.getElementById('metricTokensOut').textContent = data.tokens_out;
-                        document.getElementById('metricLatency').textContent = `${data.latency_ms.toFixed(1)}ms`;
-                        document.getElementById('metricSpeed').textContent = `${data.tokens_per_sec.toFixed(1)} t/s`;
-                    } catch (error) {
-                        errorMessage.textContent = `Error: ${error.message}. The Hugging Face space might be waking up.`;
-                        errorMessage.style.display = 'block';
-                        cursor.style.display = 'none';
-                    } finally {
-                        generateBtn.disabled = false;
-                        generateBtn.textContent = 'Generate Text';
-                        generateBtn.style.opacity = '1';
+                    if (!response.ok) {
+                        throw new Error('API Error: ' + response.statusText);
                     }
-                });
+
+                    const data = await response.json();
+                    lastGeneratedText = data.generated_text;
+
+                    await typeWriter(data.generated_text, storyText);
+
+                    // Build metric summary
+                    const parts = [];
+                    if (data.tokens_out != null) parts.push(data.tokens_out + ' tokens');
+                    if (data.latency_ms != null) parts.push(data.latency_ms.toFixed(0) + ' ms');
+                    if (data.tokens_per_sec != null) parts.push(data.tokens_per_sec.toFixed(1) + ' t/s');
+                    metricSummary.textContent = parts.join(' · ') || '—';
+
+                } catch (error) {
+                    errorMessage.textContent = 'Error: ' + error.message + '. The Hugging Face space may be waking up. Please try again in a few seconds.';
+                    errorMessage.style.display = 'block';
+                    storyCursor.style.display = 'none';
+                } finally {
+                    generateBtn.disabled = false;
+                    generateBtn.textContent = 'Generate Story';
+                }
             }
+
+            generateBtn.addEventListener('click', generateStory);
+
+            // Allow Ctrl+Enter to generate
+            promptInput.addEventListener('keydown', function (e) {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    e.preventDefault();
+                    generateStory();
+                }
+            });
+
+            // ---- Copy Story ----
+            copyBtn.addEventListener('click', function () {
+                if (!lastGeneratedText) return;
+                navigator.clipboard.writeText(lastGeneratedText).then(function () {
+                    copyToast.classList.add('visible');
+                    setTimeout(function () {
+                        copyToast.classList.remove('visible');
+                    }, 2000);
+                }).catch(function () {
+                    // Fallback
+                    const textarea = document.createElement('textarea');
+                    textarea.value = lastGeneratedText;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    copyToast.classList.add('visible');
+                    setTimeout(function () {
+                        copyToast.classList.remove('visible');
+                    }, 2000);
+                });
+            });
+
+            // ---- Generate Again ----
+            generateAgainBtn.addEventListener('click', generateStory);
+
+            // ---- Clear ----
+            clearBtn.addEventListener('click', function () {
+                storyOutput.style.display = 'none';
+                storyText.textContent = '';
+                metricSummary.textContent = '—';
+                lastGeneratedText = '';
+                errorMessage.style.display = 'none';
+                promptInput.value = '';
+                promptInput.focus();
+            });
         })();
     </script>
 </body>
